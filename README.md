@@ -160,9 +160,9 @@ cd infra && docker-compose up -d
 
 프로젝트를 진행하며 내린 기술적 의사결정을 기록합니다.
 
-- [Redis 분산락을 선택한 이유]() - 작성 예정
-- [Kafka vs RabbitMQ 비교 및 선택 근거]() - 작성 예정
-- [멀티모듈 구조 설계 이유]() - 작성 예정
+- [Redis 분산락을 선택한 이유](docs/adr/001-redis-distributed-lock.md)
+- [Kafka vs RabbitMQ 비교 및 선택 근거](docs/adr/002-kafka-vs-rabbitmq.md)
+- [멀티모듈 구조 설계 이유](docs/adr/003-multi-module-structure.md)
 
 ## 🙋 Author
 
