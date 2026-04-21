@@ -14,11 +14,11 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
-  redis:
+  redis:tm
     image: redis:7.2
     container_name: payment-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
