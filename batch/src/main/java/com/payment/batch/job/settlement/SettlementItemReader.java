@@ -4,6 +4,7 @@ import com.payment.batch.domain.settlement.Settlement;
 import com.payment.batch.domain.settlement.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Slf4j
 @Component
+@StepScope
 @RequiredArgsConstructor
 public class SettlementItemReader implements ItemReader<Settlement> {
 
@@ -23,7 +25,6 @@ public class SettlementItemReader implements ItemReader<Settlement> {
     @Override
     public Settlement read() {
         if (iterator == null) {
-            // 1시간 전까지 승인된 PENDING 정산만 처리 (진행 중인 건 제외)
             List<Settlement> items = settlementRepository.findPendingBefore(
                     LocalDateTime.now().minusHours(1)
             );
@@ -32,9 +33,5 @@ public class SettlementItemReader implements ItemReader<Settlement> {
         }
 
         return iterator.hasNext() ? iterator.next() : null;
-    }
-
-    public void reset() {
-        iterator = null;
     }
 }

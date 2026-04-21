@@ -1,5 +1,6 @@
 package com.payment.batch.job.settlement;
 
+import com.payment.batch.domain.settlement.Settlement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -11,8 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.payment.batch.domain.settlement.Settlement;
-
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -22,19 +21,18 @@ public class SettlementJobConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-    private final SettlementItemReader settlementItemReader;
     private final SettlementItemProcessor settlementItemProcessor;
     private final SettlementItemWriter settlementItemWriter;
 
     @Bean
-    public Job settlementJob() {
+    public Job settlementJob(Step settlementStep) {
         return new JobBuilder("settlementJob", jobRepository)
-                .start(settlementStep())
+                .start(settlementStep)
                 .build();
     }
 
     @Bean
-    public Step settlementStep() {
+    public Step settlementStep(SettlementItemReader settlementItemReader) {
         return new StepBuilder("settlementStep", jobRepository)
                 .<Settlement, Settlement>chunk(CHUNK_SIZE, transactionManager)
                 .reader(settlementItemReader)
