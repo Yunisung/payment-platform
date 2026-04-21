@@ -24,3 +24,21 @@ spring:
         spring.json.trusted.packages: "com.payment.*"
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.payment.settlement.infrastructure.kafka.PaymentApprovedEvent
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: settlement-service
+    description: 정산 이벤트 처리 서비스
+    version: 1.0.0

@@ -29,6 +29,24 @@ jwt:
   secret: payment-platform-secret-key-must-be-at-least-256-bits-long
   expiration: 86400000  # 24시간 (ms)
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: api-server
+    description: 결제 API 서버
+    version: 1.0.0
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n"

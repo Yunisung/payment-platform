@@ -18,3 +18,21 @@ spring:
       enabled: false  # 앱 시작 시 자동 실행 방지 (스케줄러가 제어)
     jdbc:
       initialize-schema: always  # Spring Batch 메타 테이블 자동 생성
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: batch
+    description: 정산 배치 처리 서비스
+    version: 1.0.0

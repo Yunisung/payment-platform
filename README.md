@@ -19,20 +19,69 @@
 
 ## 🏗 Architecture
 
+```mermaid
+graph TB
+    Client["🖥️ Client"]
+
+    subgraph api["api-server (8080)"]
+        AC["AuthController\n/api/auth/**"]
+        PC["PaymentController\n/api/payments/**"]
+        ACT1["Actuator\n/actuator/health"]
+    end
+
+    subgraph infra["Infrastructure"]
+        MySQL[("🗄️ MySQL 8.0\n결제·회원 데이터")]
+        Redis[("⚡ Redis 7.2\n분산락·멱등성 키")]
+        Kafka["📨 Kafka\npayment-approved"]
+    end
+
+    subgraph settlement["settlement-service (8081)"]
+        KC["KafkaConsumer\npayment-approved"]
+        SS["SettlementService"]
+        ACT2["Actuator\n/actuator/health"]
+    end
+
+    subgraph batch["batch (scheduled)"]
+        SJ["SettlementJob\n매일 새벽 2시"]
+        ACT3["Actuator\n/actuator/health"]
+    end
+
+    Client -->|"JWT 인증"| AC
+    Client -->|"결제 요청/조회/취소"| PC
+    PC -->|"결제 저장"| MySQL
+    PC -->|"분산락 획득"| Redis
+    PC -->|"PaymentApprovedEvent"| Kafka
+    Kafka -->|"이벤트 수신"| KC
+    KC --> SS
+    SS -->|"정산 레코드 저장"| MySQL
+    SJ -->|"PENDING 정산 처리"| MySQL
 ```
-[Client]
-   │
-   ▼
-[api-server]         # 결제 요청/승인/취소 API, JWT 인증
-   │
-   ├──── MySQL       # 결제/가맹점 데이터 저장
-   ├──── Redis       # 멱등성 키 관리, 분산락
-   │
-   ▼ Kafka Event
-[settlement-service] # 결제 이벤트 수신 → 정산 처리
-   │
-   ▼
-[batch]              # 정산 배치 스케줄러 (Spring Batch)
+
+### 결제 흐름
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as api-server
+    participant R as Redis
+    participant DB as MySQL
+    participant K as Kafka
+    participant S as settlement-service
+
+    C->>A: POST /api/payments (idempotencyKey)
+    A->>DB: 중복 키 확인
+    alt 이미 처리된 요청
+        DB-->>A: 기존 결과 반환
+        A-->>C: 200 (멱등성 응답)
+    else 신규 요청
+        A->>R: 분산락 획득 (SETNX)
+        A->>DB: Payment 저장 (APPROVED)
+        A->>K: PaymentApprovedEvent 발행
+        A->>R: 분산락 해제
+        A-->>C: 201 Created
+        K->>S: 이벤트 수신
+        S->>DB: Settlement 저장 (PENDING)
+    end
 ```
 
 ## 📦 Module Structure
@@ -89,8 +138,16 @@ POST /api/auth/signup
 | Method | URL | 설명 |
 |--------|-----|------|
 | POST | `/api/payments` | 결제 요청 |
-| GET | `/api/payments/{paymentId}` | 결제 조회 |
+| GET | `/api/payments` | 결제 목록 조회 (페이징·상태 필터) |
+| GET | `/api/payments/{paymentId}` | 결제 단건 조회 |
 | DELETE | `/api/payments/{paymentId}` | 결제 취소 |
+
+### 헬스체크
+
+| URL | 설명 |
+|-----|------|
+| `GET /actuator/health` | 서비스 상태 확인 |
+| `GET /actuator/info` | 앱 버전·설명 정보 |
 
 **결제 요청**
 ```json
