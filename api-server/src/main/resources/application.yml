@@ -28,3 +28,7 @@ spring:
 jwt:
   secret: payment-platform-secret-key-must-be-at-least-256-bits-long
   expiration: 86400000  # 24시간 (ms)
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n"
