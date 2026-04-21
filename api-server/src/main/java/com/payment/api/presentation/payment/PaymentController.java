@@ -1,10 +1,12 @@
 package com.payment.api.presentation.payment;
 
 import com.payment.api.application.payment.PaymentService;
+import com.payment.api.domain.payment.PaymentStatus;
 import com.payment.api.global.exception.GlobalExceptionHandler.ErrorResponse;
 import com.payment.api.presentation.payment.dto.PaymentRequest;
 import com.payment.api.presentation.payment.dto.PaymentResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,6 +14,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,6 +44,17 @@ public class PaymentController {
             @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody PaymentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.pay(memberId, request));
+    }
+
+    @Operation(summary = "결제 목록 조회", description = "내 결제 목록을 페이징으로 조회합니다. status 파라미터로 상태 필터링 가능합니다.")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @GetMapping
+    public ResponseEntity<Page<PaymentResponse>> getPayments(
+            @AuthenticationPrincipal Long memberId,
+            @Parameter(description = "결제 상태 필터 (PENDING, APPROVED, CANCELLED, FAILED)")
+            @RequestParam(required = false) PaymentStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(paymentService.getPayments(memberId, status, pageable));
     }
 
     @Operation(summary = "결제 조회", description = "결제 ID로 결제 내역을 조회합니다.")

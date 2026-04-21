@@ -4,6 +4,7 @@ import com.payment.api.domain.member.Member;
 import com.payment.api.domain.member.MemberRepository;
 import com.payment.api.domain.payment.Payment;
 import com.payment.api.domain.payment.PaymentRepository;
+import com.payment.api.domain.payment.PaymentStatus;
 import com.payment.api.global.exception.ErrorCode;
 import com.payment.api.global.exception.MemberException;
 import com.payment.api.global.exception.PaymentException;
@@ -14,6 +15,8 @@ import com.payment.api.presentation.payment.dto.PaymentRequest;
 import com.payment.api.presentation.payment.dto.PaymentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,5 +104,14 @@ public class PaymentService {
         }
 
         return PaymentResponse.from(payment);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PaymentResponse> getPayments(Long memberId, PaymentStatus status, Pageable pageable) {
+        Page<Payment> payments = (status != null)
+                ? paymentRepository.findByMemberIdAndStatus(memberId, status, pageable)
+                : paymentRepository.findByMemberId(memberId, pageable);
+
+        return payments.map(PaymentResponse::from);
     }
 }

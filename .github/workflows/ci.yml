@@ -43,3 +43,12 @@ jobs:
           path: |
             **/build/reports/tests/
           retention-days: 7
+
+      - name: 커버리지 리포트 업로드
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            **/build/reports/jacoco/
+          retention-days: 7

@@ -134,4 +134,44 @@ class PaymentIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("결제 목록 조회 성공 - 페이징 응답 반환")
+    void getPayments_success() throws Exception {
+        // 결제 2건 생성
+        for (int i = 1; i <= 2; i++) {
+            mockMvc.perform(post("/api/payments")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    new PaymentRequest("list-key-00" + i, BigDecimal.valueOf(1000 * i), "KRW", "주문 " + i))))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/api/payments")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    @DisplayName("결제 목록 상태 필터 조회 - APPROVED만 반환")
+    void getPayments_filterByStatus_returnsOnlyMatching() throws Exception {
+        mockMvc.perform(post("/api/payments")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new PaymentRequest("filter-key-001", BigDecimal.valueOf(5000), "KRW", "필터 테스트"))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/payments")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("status", "APPROVED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].status").value("APPROVED"));
+    }
 }
