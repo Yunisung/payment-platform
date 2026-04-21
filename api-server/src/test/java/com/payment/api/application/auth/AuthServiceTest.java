@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
+import com.payment.api.global.exception.MemberException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,7 +64,7 @@ class AuthServiceTest {
         given(memberRepository.existsByEmail(request.email())).willReturn(true);
 
         assertThatThrownBy(() -> authService.signup(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(MemberException.class)
                 .hasMessage("이미 사용 중인 이메일입니다.");
     }
 
@@ -91,7 +92,7 @@ class AuthServiceTest {
         given(memberRepository.findByEmail(request.email())).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(MemberException.class)
                 .hasMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 
@@ -105,7 +106,7 @@ class AuthServiceTest {
         given(passwordEncoder.matches(request.password(), member.getPassword())).willReturn(false);
 
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(MemberException.class)
                 .hasMessage("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 }

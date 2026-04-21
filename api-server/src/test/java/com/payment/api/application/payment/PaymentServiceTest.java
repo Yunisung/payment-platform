@@ -9,6 +9,7 @@ import com.payment.api.global.kafka.PaymentEventPublisher;
 import com.payment.api.global.redis.RedisLockManager;
 import com.payment.api.presentation.payment.dto.PaymentRequest;
 import com.payment.api.presentation.payment.dto.PaymentResponse;
+import com.payment.api.global.exception.PaymentException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,7 +93,7 @@ class PaymentServiceTest {
         given(redisLockManager.tryLock(request.idempotencyKey())).willReturn(false);
 
         assertThatThrownBy(() -> paymentService.pay(memberId, request))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(PaymentException.class)
                 .hasMessage("동일한 요청이 처리 중입니다. 잠시 후 다시 시도해주세요.");
     }
 
@@ -120,7 +121,7 @@ class PaymentServiceTest {
         given(paymentRepository.findById(999L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> paymentService.cancel(1L, 999L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(PaymentException.class)
                 .hasMessage("존재하지 않는 결제입니다.");
     }
 }

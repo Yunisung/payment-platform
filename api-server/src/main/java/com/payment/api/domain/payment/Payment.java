@@ -1,6 +1,8 @@
 package com.payment.api.domain.payment;
 
 import com.payment.api.domain.member.Member;
+import com.payment.api.global.exception.ErrorCode;
+import com.payment.api.global.exception.PaymentException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -75,7 +77,7 @@ public class Payment {
 
     public void approve() {
         if (this.status != PaymentStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태의 결제만 승인할 수 있습니다.");
+            throw new PaymentException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
         this.status = PaymentStatus.APPROVED;
         this.updatedAt = LocalDateTime.now();
@@ -83,7 +85,7 @@ public class Payment {
 
     public void cancel() {
         if (this.status != PaymentStatus.APPROVED) {
-            throw new IllegalStateException("APPROVED 상태의 결제만 취소할 수 있습니다.");
+            throw new PaymentException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
         this.status = PaymentStatus.CANCELLED;
         this.updatedAt = LocalDateTime.now();

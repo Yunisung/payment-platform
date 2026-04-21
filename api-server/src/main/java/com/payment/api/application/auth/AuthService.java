@@ -2,6 +2,8 @@ package com.payment.api.application.auth;
 
 import com.payment.api.domain.member.Member;
 import com.payment.api.domain.member.MemberRepository;
+import com.payment.api.global.exception.ErrorCode;
+import com.payment.api.global.exception.MemberException;
 import com.payment.api.global.security.JwtTokenProvider;
 import com.payment.api.presentation.auth.dto.LoginRequest;
 import com.payment.api.presentation.auth.dto.LoginResponse;
@@ -23,7 +25,7 @@ public class AuthService {
     @Transactional
     public SignupResponse signup(SignupRequest request) {
         if (memberRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new MemberException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         Member member = Member.createMerchant(
@@ -39,10 +41,10 @@ public class AuthService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Member member = memberRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new MemberException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         String token = jwtTokenProvider.createToken(member.getId(), member.getRole().name());

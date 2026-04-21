@@ -4,6 +4,9 @@ import com.payment.api.domain.member.Member;
 import com.payment.api.domain.member.MemberRepository;
 import com.payment.api.domain.payment.Payment;
 import com.payment.api.domain.payment.PaymentRepository;
+import com.payment.api.global.exception.ErrorCode;
+import com.payment.api.global.exception.MemberException;
+import com.payment.api.global.exception.PaymentException;
 import com.payment.api.global.kafka.PaymentApprovedEvent;
 import com.payment.api.global.kafka.PaymentEventPublisher;
 import com.payment.api.global.redis.RedisLockManager;
@@ -26,7 +29,6 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse pay(Long memberId, PaymentRequest request) {
-        // 이미 처리된 요청이면 기존 결과 반환 (멱등성)
         return paymentRepository.findByIdempotencyKey(request.idempotencyKey())
                 .map(PaymentResponse::from)
                 .orElseGet(() -> processNewPayment(memberId, request));
@@ -34,11 +36,10 @@ public class PaymentService {
 
     private PaymentResponse processNewPayment(Long memberId, PaymentRequest request) {
         if (!redisLockManager.tryLock(request.idempotencyKey())) {
-            throw new IllegalStateException("동일한 요청이 처리 중입니다. 잠시 후 다시 시도해주세요.");
+            throw new PaymentException(ErrorCode.PAYMENT_PROCESSING);
         }
 
         try {
-            // 락 획득 후 DB 재확인 (이중 체크)
             return paymentRepository.findByIdempotencyKey(request.idempotencyKey())
                     .map(PaymentResponse::from)
                     .orElseGet(() -> createAndApprovePayment(memberId, request));
@@ -49,7 +50,7 @@ public class PaymentService {
 
     private PaymentResponse createAndApprovePayment(Long memberId, PaymentRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new MemberException(ErrorCode.MEMBER_NOT_FOUND));
 
         Payment payment = Payment.create(
                 member,
@@ -80,10 +81,10 @@ public class PaymentService {
     @Transactional
     public PaymentResponse cancel(Long memberId, Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제입니다."));
+                .orElseThrow(() -> new PaymentException(ErrorCode.PAYMENT_NOT_FOUND));
 
         if (!payment.getMember().getId().equals(memberId)) {
-            throw new IllegalArgumentException("본인의 결제만 취소할 수 있습니다.");
+            throw new PaymentException(ErrorCode.PAYMENT_ACCESS_DENIED);
         }
 
         payment.cancel();
@@ -93,10 +94,10 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentResponse getPayment(Long memberId, Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제입니다."));
+                .orElseThrow(() -> new PaymentException(ErrorCode.PAYMENT_NOT_FOUND));
 
         if (!payment.getMember().getId().equals(memberId)) {
-            throw new IllegalArgumentException("본인의 결제만 조회할 수 있습니다.");
+            throw new PaymentException(ErrorCode.PAYMENT_ACCESS_DENIED);
         }
 
         return PaymentResponse.from(payment);
