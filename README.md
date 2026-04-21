@@ -21,29 +21,29 @@
 
 ```mermaid
 graph TB
-    Client["🖥️ Client"]
+    Client["Client"]
 
-    subgraph api["api-server (8080)"]
-        AC["AuthController\n/api/auth/**"]
-        PC["PaymentController\n/api/payments/**"]
-        ACT1["Actuator\n/actuator/health"]
+    subgraph api["api-server :8080"]
+        AC["AuthController<br/>/api/auth/**"]
+        PC["PaymentController<br/>/api/payments/**"]
+        ACT1["Actuator<br/>/actuator/health"]
     end
 
     subgraph infra["Infrastructure"]
-        MySQL[("🗄️ MySQL 8.0\n결제·회원 데이터")]
-        Redis[("⚡ Redis 7.2\n분산락·멱등성 키")]
-        Kafka["📨 Kafka\npayment-approved"]
+        MySQL[("MySQL 8.0<br/>결제·회원 데이터")]
+        Redis[("Redis 7.2<br/>분산락·멱등성 키")]
+        Kafka["Kafka<br/>payment-approved"]
     end
 
-    subgraph settlement["settlement-service (8081)"]
-        KC["KafkaConsumer\npayment-approved"]
+    subgraph settlement["settlement-service :8081"]
+        KC["KafkaConsumer"]
         SS["SettlementService"]
-        ACT2["Actuator\n/actuator/health"]
+        ACT2["Actuator<br/>/actuator/health"]
     end
 
-    subgraph batch["batch (scheduled)"]
-        SJ["SettlementJob\n매일 새벽 2시"]
-        ACT3["Actuator\n/actuator/health"]
+    subgraph batch["batch scheduled"]
+        SJ["SettlementJob<br/>매일 새벽 2시"]
+        ACT3["Actuator<br/>/actuator/health"]
     end
 
     Client -->|"JWT 인증"| AC
@@ -68,11 +68,11 @@ sequenceDiagram
     participant K as Kafka
     participant S as settlement-service
 
-    C->>A: POST /api/payments (idempotencyKey)
-    A->>DB: 중복 키 확인
+    C->>A: POST /api/payments
+    A->>DB: idempotencyKey 중복 확인
     alt 이미 처리된 요청
         DB-->>A: 기존 결과 반환
-        A-->>C: 200 (멱등성 응답)
+        A-->>C: 200 OK (멱등성 응답)
     else 신규 요청
         A->>R: 분산락 획득 (SETNX)
         A->>DB: Payment 저장 (APPROVED)
