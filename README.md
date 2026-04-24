@@ -295,6 +295,9 @@ kubectl exec -it mysql-0 -- mysql -u payment -ppayment1234 payment_db \
 - [Redis 분산락을 선택한 이유](docs/adr/001-redis-distributed-lock.md)
 - [Kafka vs RabbitMQ 비교 및 선택 근거](docs/adr/002-kafka-vs-rabbitmq.md)
 - [멀티모듈 구조 설계 이유](docs/adr/003-multi-module-structure.md)
+- [MDC 기반 요청 추적 (Trace ID)](docs/adr/004-mdc-trace-id.md)
+- [JWT 기반 인증 방식 선택](docs/adr/005-jwt-authentication.md)
+- [Testcontainers 선택 (Mock vs 실제 컨테이너)](docs/adr/006-testcontainers.md)
 
 ## 🙋 Author
 
